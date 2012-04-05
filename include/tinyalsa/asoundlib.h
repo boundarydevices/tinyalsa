@@ -303,6 +303,24 @@ int mixer_ctl_set_enum_by_string(struct mixer_ctl *ctl, const char *string);
 int mixer_ctl_get_range_min(struct mixer_ctl *ctl);
 int mixer_ctl_get_range_max(struct mixer_ctl *ctl);
 
+
+/*
+ * CONTROL API
+ */
+struct control;
+
+/*Open and close a control */
+struct control *control_open(unsigned int card);
+void control_close(struct control *control);
+
+/* Get info about control controls */
+const char *control_card_info_get_id(struct control *control);
+const char *control_card_info_get_name(struct control *control);
+
+int control_pcm_next_device(struct control *control, int *device, int stream);
+const char *control_pcm_info_get_id(struct control *control, unsigned int device, int stream);
+const char *control_pcm_info_get_name(struct control *control, unsigned int device, int stream);
+
 #if defined(__cplusplus)
 }  /* extern "C" */
 #endif
