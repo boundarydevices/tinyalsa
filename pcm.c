@@ -1200,7 +1200,7 @@ int pcm_mmap_transfer(struct pcm *pcm, const void *buffer, unsigned int bytes)
         /* get the available space for writing new frames */
         avail = pcm_avail_update(pcm);
         if (avail < 0) {
-            fprintf(stderr, "cannot determine available mmap frames");
+            oops(pcm, err, "cannot determine available mmap frames");
             return err;
         }
 
@@ -1208,7 +1208,7 @@ int pcm_mmap_transfer(struct pcm *pcm, const void *buffer, unsigned int bytes)
 	    if (!pcm->running &&
             (pcm->buffer_size - avail) >= pcm->config.start_threshold) {
             if (pcm_start(pcm) < 0) {
-               fprintf(stderr, "start error: hw 0x%x app 0x%x avail 0x%x\n",
+               oops(pcm, -errno, "start error: hw 0x%x app 0x%x avail 0x%x\n",
                     (unsigned int)pcm->mmap_status->hw_ptr,
                     (unsigned int)pcm->mmap_control->appl_ptr,
                     avail);
@@ -1259,7 +1259,7 @@ int pcm_mmap_transfer(struct pcm *pcm, const void *buffer, unsigned int bytes)
         /* copy frames from buffer */
         frames = pcm_mmap_transfer_areas(pcm, (void *)buffer, offset, frames);
         if (frames < 0) {
-            fprintf(stderr, "write error: hw 0x%x app 0x%x avail 0x%x\n",
+            oops(pcm, frames, "write error: hw 0x%x app 0x%x avail 0x%x\n",
                     (unsigned int)pcm->mmap_status->hw_ptr,
                     (unsigned int)pcm->mmap_control->appl_ptr,
                     avail);
@@ -1302,4 +1302,12 @@ int pcm_ioctl(struct pcm *pcm, int request, ...)
     va_end(ap);
 
     return ioctl(pcm->fd, request, arg);
+}
+
+int pcm_drain(struct pcm *pcm)
+{
+    if (ioctl(pcm->fd, SNDRV_PCM_IOCTL_DRAIN) < 0)
+        return oops(pcm, errno, "drain failed");
+
+    return 0;
 }
