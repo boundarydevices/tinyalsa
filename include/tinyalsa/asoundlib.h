@@ -167,7 +167,7 @@ int pcm_stop(struct pcm *pcm);
  * Only accepted if opened with PCM_MMAP and PCM_NOIRQ flags
  */
 int pcm_set_avail_min(struct pcm *pcm, int avail_min);
-
+int pcm_drain(struct pcm *pcm);
 /*
  * MIXER API
  */
