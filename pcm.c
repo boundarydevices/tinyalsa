@@ -472,7 +472,7 @@ int pcm_get_htimestamp(struct pcm *pcm, unsigned int *avail,
 
     if (frames < 0)
         frames += pcm->boundary;
-    else if (frames > (int)pcm->boundary)
+    else if (frames >= (int)pcm->boundary)
         frames -= pcm->boundary;
 
     *avail = (unsigned int)frames;
@@ -1045,7 +1045,7 @@ static inline int pcm_mmap_playback_avail(struct pcm *pcm)
 
     if (avail < 0)
         avail += pcm->boundary;
-    else if (avail > (int)pcm->boundary)
+    else if (avail >= (int)pcm->boundary)
         avail -= pcm->boundary;
 
     return avail;
@@ -1074,7 +1074,7 @@ static void pcm_mmap_appl_forward(struct pcm *pcm, int frames)
     appl_ptr += frames;
 
     /* check for boundary wrap */
-    if (appl_ptr > pcm->boundary)
+    if (appl_ptr >= pcm->boundary)
          appl_ptr -= pcm->boundary;
     pcm->mmap_control->appl_ptr = appl_ptr;
 }
