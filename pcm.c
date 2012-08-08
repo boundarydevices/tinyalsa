@@ -1205,7 +1205,7 @@ int pcm_mmap_transfer(struct pcm *pcm, const void *buffer, unsigned int bytes)
         }
 
         /* start the audio if we reach the threshold */
-	    if (!pcm->running &&
+        if (!pcm->running &&
             (pcm->buffer_size - avail) >= pcm->config.start_threshold) {
             if (pcm_start(pcm) < 0) {
                oops(pcm, -errno, "start error: hw 0x%x app 0x%x avail 0x%x\n",
@@ -1309,5 +1309,14 @@ int pcm_drain(struct pcm *pcm)
     if (ioctl(pcm->fd, SNDRV_PCM_IOCTL_DRAIN) < 0)
         return oops(pcm, errno, "drain failed");
 
+    return 0;
+}
+
+int pcm_prepare(struct pcm *pcm) {
+    if (ioctl(pcm->fd, SNDRV_PCM_IOCTL_PREPARE) < 0){
+        return oops(pcm, errno, "cannot prepare channel");
+    }
+
+    pcm_sync_ptr(pcm, 0);
     return 0;
 }
