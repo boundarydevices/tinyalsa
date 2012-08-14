@@ -1,6 +1,7 @@
 /* asoundlib.h
 **
 ** Copyright 2011, The Android Open Source Project
+** Copyright (C) 2012 Freescale Semiconductor, Inc.
 **
 ** Redistribution and use in source and binary forms, with or without
 ** modification, are permitted provided that the following conditions are met:
@@ -257,6 +258,8 @@ int pcm_set_avail_min(struct pcm *pcm, int avail_min);
 int pcm_drain(struct pcm *pcm);
 int pcm_state(struct pcm *pcm);
 int pcm_prepare(struct pcm *pcm);
+int pcm_get_near_rate(unsigned int card, unsigned int device,
+                     unsigned int flags, int * rate);
 /*
  * MIXER API
  */
@@ -318,6 +321,7 @@ void control_close(struct control *control);
 /* Get info about control controls */
 const char *control_card_info_get_id(struct control *control);
 const char *control_card_info_get_name(struct control *control);
+const char *control_card_info_get_driver(struct control *control);
 
 int control_pcm_next_device(struct control *control, int *device, int stream);
 const char *control_pcm_info_get_id(struct control *control, unsigned int device, int stream);

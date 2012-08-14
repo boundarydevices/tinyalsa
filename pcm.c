@@ -1,6 +1,7 @@
 /* pcm.c
 **
 ** Copyright 2011, The Android Open Source Project
+** Copyright (C) 2012 Freescale Semiconductor, Inc.
 **
 ** Redistribution and use in source and binary forms, with or without
 ** modification, are permitted provided that the following conditions are met:
@@ -215,6 +216,31 @@ static unsigned int param_get_int(struct snd_pcm_hw_params *p, int n)
             return i->max;
     }
     return 0;
+}
+
+static unsigned int param_get_min(struct snd_pcm_hw_params *p, int n)
+{
+    if (param_is_interval(n)) {
+        struct snd_interval *i = param_to_interval(p, n);
+            return i->min;
+    }
+    return 0;
+}
+
+static unsigned int param_get_max(struct snd_pcm_hw_params *p, int n)
+{
+    if (param_is_interval(n)) {
+        struct snd_interval *i = param_to_interval(p, n);
+            return i->max;
+    }
+    return 0;
+}
+
+static void param_set_int_rmask(struct snd_pcm_hw_params *p, int n)
+{
+    if (param_is_interval(n)) {
+        p->rmask |= 1 << n;
+    }
 }
 
 static void param_init(struct snd_pcm_hw_params *p)
@@ -1319,4 +1345,60 @@ int pcm_prepare(struct pcm *pcm) {
 
     pcm_sync_ptr(pcm, 0);
     return 0;
+}
+
+int pcm_get_near_rate(unsigned int card, unsigned int device,
+                     unsigned int flags, int *rate)
+{
+    struct pcm *pcm;
+    struct snd_pcm_hw_params params;
+    char fn[256];
+    int ret = 0;
+    int min = 0, max = 0;
+    int request_rate = *rate;
+
+    pcm = calloc(1, sizeof(struct pcm));
+    if (!pcm)
+        return -1;
+
+    snprintf(fn, sizeof(fn), "/dev/snd/pcmC%uD%u%c", card, device,
+             flags & PCM_IN ? 'c' : 'p');
+
+    pcm->flags = flags;
+    pcm->fd = open(fn, O_RDWR);
+    if (pcm->fd < 0) {
+        oops(pcm, errno, "cannot open device '%s'", fn);
+        ret = -1;
+        goto fail;
+    }
+
+    param_init(&params);
+    param_set_min(&params, SNDRV_PCM_HW_PARAM_RATE, request_rate);
+    param_set_int_rmask(&params, SNDRV_PCM_HW_PARAM_RATE);
+
+    if (ioctl(pcm->fd, SNDRV_PCM_IOCTL_HW_REFINE, &params)) {
+        oops(pcm, errno, "cannot set hw params rate min");
+    } else
+        min = param_get_min(&params, SNDRV_PCM_HW_PARAM_RATE);
+
+    param_init(&params);
+    param_set_max(&params, SNDRV_PCM_HW_PARAM_RATE, request_rate);
+    param_set_int_rmask(&params, SNDRV_PCM_HW_PARAM_RATE);
+
+    if (ioctl(pcm->fd, SNDRV_PCM_IOCTL_HW_REFINE, &params)) {
+        oops(pcm, errno, "cannot set hw params rate max");
+    }
+    else
+        max = param_get_max(&params, SNDRV_PCM_HW_PARAM_RATE);
+
+    if(min > 0)       *rate = min;
+    else if(max > 0)  *rate = max;
+    else              *rate = 0;
+
+fail_close:
+    close(pcm->fd);
+    pcm->fd = -1;
+fail:
+    free(pcm);
+    return ret;
 }
