@@ -1,6 +1,7 @@
 /* mixer.c
 **
 ** Copyright 2011, The Android Open Source Project
+** Copyright (C) 2012 Freescale Semiconductor, Inc.
 **
 ** Redistribution and use in source and binary forms, with or without
 ** modification, are permitted provided that the following conditions are met:
@@ -25,7 +26,6 @@
 ** OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
 ** DAMAGE.
 */
-/* Copyright 2012 Freescale Semiconductor Inc. */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -195,13 +195,20 @@ void control_close(struct control *control)
     free(control);
 }
 
-
 const char *control_card_info_get_id(struct control *control)
 {
     if (!control)
         return "";
 
     return (const char *)control->card_info->id;
+}
+
+const char *control_card_info_get_driver(struct control *control)
+{
+    if (!control)
+        return "";
+
+    return (const char *)control->card_info->driver;
 }
 
 const char *control_card_info_get_name(struct control *control)
