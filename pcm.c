@@ -183,6 +183,7 @@ struct pcm {
     void *mmap_buffer;
     unsigned int noirq_frames_per_msec;
     int wait_for_avail_min;
+    int time_of_xrun;
 };
 
 unsigned int pcm_get_buffer_size(struct pcm *pcm)
@@ -193,6 +194,11 @@ unsigned int pcm_get_buffer_size(struct pcm *pcm)
 const char* pcm_get_error(struct pcm *pcm)
 {
     return pcm->error;
+}
+
+int pcm_get_time_of_xrun(struct pcm *pcm)
+{
+    return pcm->time_of_xrun;
 }
 
 static int oops(struct pcm *pcm, int e, const char *fmt, ...)
@@ -415,6 +421,7 @@ int pcm_write(struct pcm *pcm, void *data, unsigned int count)
             pcm->running = 0;
             if (errno == EPIPE) {
                     /* we failed to make our window -- try to restart */
+                pcm->time_of_xrun += pcm_get_time_of_status(pcm);
                 pcm->underruns++;
                 continue;
             }
@@ -447,6 +454,7 @@ int pcm_read(struct pcm *pcm, void *data, unsigned int count)
             pcm->running = 0;
             if (errno == EPIPE) {
                     /* we failed to make our window -- try to restart */
+                pcm->time_of_xrun += pcm_get_time_of_status(pcm);
                 pcm->underruns++;
                 continue;
             }
@@ -758,6 +766,24 @@ int pcm_set_avail_min(struct pcm *pcm, int avail_min)
     return 0;
 }
 
+int pcm_get_time_of_status(struct pcm *pcm)
+{
+    struct snd_pcm_status status;
+    struct timeval now, diff, tstamp;
+    int times = 0;
+    if (ioctl(pcm->fd, SNDRV_PCM_IOCTL_STATUS, &status) < 0) {
+           oops(pcm, errno, "cannot read stream status");
+    } else {
+           gettimeofday(&now, 0);
+           tstamp.tv_sec = status.trigger_tstamp.tv_sec;
+           tstamp.tv_usec = status.trigger_tstamp.tv_nsec / 1000L;
+           timersub(&now, &tstamp, &diff);
+           times = diff.tv_sec * 1000 + diff.tv_usec / 1000.0;
+   }
+   return times;
+}
+
+
 int pcm_wait(struct pcm *pcm, int timeout)
 {
     struct pollfd pfd;
@@ -785,6 +811,7 @@ int pcm_wait(struct pcm *pcm, int timeout)
         if (pfd.revents & (POLLERR | POLLNVAL)) {
             switch (pcm_state(pcm)) {
             case PCM_STATE_XRUN:
+                pcm->time_of_xrun += pcm_get_time_of_status(pcm);
                 return -EPIPE;
             case PCM_STATE_SUSPENDED:
                 return -ESTRPIPE;
