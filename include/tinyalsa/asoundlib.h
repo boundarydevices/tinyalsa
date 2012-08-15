@@ -260,6 +260,8 @@ int pcm_state(struct pcm *pcm);
 int pcm_prepare(struct pcm *pcm);
 int pcm_get_near_rate(unsigned int card, unsigned int device,
                      unsigned int flags, int * rate);
+int pcm_get_time_of_status(struct pcm *pcm);
+int pcm_get_time_of_xrun(struct pcm *pcm);
 /*
  * MIXER API
  */
