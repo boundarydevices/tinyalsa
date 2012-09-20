@@ -35,6 +35,9 @@
 #include <ctype.h>
 
 #include <sys/ioctl.h>
+#include <sys/mman.h>
+#include <sys/time.h>
+#include <limits.h>
 
 #include <linux/ioctl.h>
 #define __force
