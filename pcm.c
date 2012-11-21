@@ -1374,15 +1374,15 @@ int pcm_prepare(struct pcm *pcm) {
     return 0;
 }
 
-int pcm_get_near_rate(unsigned int card, unsigned int device,
-                     unsigned int flags, int *rate)
+int pcm_get_near_param(unsigned int card, unsigned int device,
+                     unsigned int flags, int type, int *data)
 {
     struct pcm *pcm;
     struct snd_pcm_hw_params params;
     char fn[256];
     int ret = 0;
     int min = 0, max = 0;
-    int request_rate = *rate;
+    int request_data = *data;
 
     pcm = calloc(1, sizeof(struct pcm));
     if (!pcm)
@@ -1400,27 +1400,27 @@ int pcm_get_near_rate(unsigned int card, unsigned int device,
     }
 
     param_init(&params);
-    param_set_min(&params, SNDRV_PCM_HW_PARAM_RATE, request_rate);
-    param_set_int_rmask(&params, SNDRV_PCM_HW_PARAM_RATE);
+    param_set_min(&params, type, request_data);
+    param_set_int_rmask(&params, type);
 
     if (ioctl(pcm->fd, SNDRV_PCM_IOCTL_HW_REFINE, &params)) {
         oops(pcm, errno, "cannot set hw params rate min");
     } else
-        min = param_get_min(&params, SNDRV_PCM_HW_PARAM_RATE);
+        min = param_get_min(&params, type);
 
     param_init(&params);
-    param_set_max(&params, SNDRV_PCM_HW_PARAM_RATE, request_rate);
-    param_set_int_rmask(&params, SNDRV_PCM_HW_PARAM_RATE);
+    param_set_max(&params, type, request_data);
+    param_set_int_rmask(&params, type);
 
     if (ioctl(pcm->fd, SNDRV_PCM_IOCTL_HW_REFINE, &params)) {
         oops(pcm, errno, "cannot set hw params rate max");
     }
     else
-        max = param_get_max(&params, SNDRV_PCM_HW_PARAM_RATE);
+        max = param_get_max(&params, type);
 
-    if(min > 0)       *rate = min;
-    else if(max > 0)  *rate = max;
-    else              *rate = 0;
+    if(min > 0)       *data = min;
+    else if(max > 0)  *data = max;
+    else              *data = 0;
 
 fail_close:
     close(pcm->fd);

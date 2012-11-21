@@ -69,6 +69,27 @@ struct pcm;
 #define	PCM_STATE_SUSPENDED	7
 #define	PCM_STATE_DISCONNECTED	8
 
+#define PCM_HW_PARAM_ACCESS 0
+#define PCM_HW_PARAM_FORMAT 1
+#define PCM_HW_PARAM_SUBFORMAT 2
+#define PCM_HW_PARAM_FIRST_MASK PCM_HW_PARAM_ACCESS
+#define PCM_HW_PARAM_LAST_MASK PCM_HW_PARAM_SUBFORMAT
+#define PCM_HW_PARAM_SAMPLE_BITS 8
+#define PCM_HW_PARAM_FRAME_BITS 9
+#define PCM_HW_PARAM_CHANNELS 10
+#define PCM_HW_PARAM_RATE 11
+#define PCM_HW_PARAM_PERIOD_TIME 12
+#define PCM_HW_PARAM_PERIOD_SIZE 13
+#define PCM_HW_PARAM_PERIOD_BYTES 14
+#define PCM_HW_PARAM_PERIODS 15
+#define PCM_HW_PARAM_BUFFER_TIME 16
+#define PCM_HW_PARAM_BUFFER_SIZE 17
+#define PCM_HW_PARAM_BUFFER_BYTES 18
+#define PCM_HW_PARAM_TICK_TIME 19
+#define PCM_HW_PARAM_FIRST_INTERVAL PCM_HW_PARAM_SAMPLE_BITS
+#define PCM_HW_PARAM_LAST_INTERVAL PCM_HW_PARAM_TICK_TIME
+#define PCM_HW_PARAMS_NORESAMPLE (1<<0)
+
 /* Bit formats */
 enum pcm_format {
     PCM_FORMAT_INVALID = -1,
@@ -258,8 +279,8 @@ int pcm_set_avail_min(struct pcm *pcm, int avail_min);
 int pcm_drain(struct pcm *pcm);
 int pcm_state(struct pcm *pcm);
 int pcm_prepare(struct pcm *pcm);
-int pcm_get_near_rate(unsigned int card, unsigned int device,
-                     unsigned int flags, int * rate);
+int pcm_get_near_param(unsigned int card, unsigned int device,
+                     unsigned int flags, int type, int * rate);
 int pcm_get_time_of_status(struct pcm *pcm);
 int pcm_get_time_of_xrun(struct pcm *pcm);
 /*
