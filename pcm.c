@@ -48,6 +48,7 @@
 #include <sound/asound.h>
 
 #include <tinyalsa/asoundlib.h>
+#include <android/log.h>
 
 #define PARAM_MAX SNDRV_PCM_HW_PARAM_LAST_INTERVAL
 
@@ -218,11 +219,9 @@ static unsigned int param_get_int(struct snd_pcm_hw_params *p, int n)
     return 0;
 }
 
-static void param_set_int_rmask(struct snd_pcm_hw_params *p, int n)
+static void param_set_rmask(struct snd_pcm_hw_params *p, int n)
 {
-    if (param_is_interval(n)) {
-        p->rmask |= 1 << n;
-    }
+    p->rmask |= 1 << n;
 }
 
 static void param_init(struct snd_pcm_hw_params *p)
@@ -313,6 +312,19 @@ static unsigned int pcm_format_to_alsa(enum pcm_format format)
     default:
     case PCM_FORMAT_S16_LE:
         return SNDRV_PCM_FORMAT_S16_LE;
+    };
+}
+
+static unsigned int alsa_format_to_pcm(unsigned int format)
+{
+    switch (format) {
+    case SNDRV_PCM_FORMAT_S32_LE:
+        return PCM_FORMAT_S32_LE;
+    case SNDRV_PCM_FORMAT_S24_LE:
+        return PCM_FORMAT_S24_LE;
+    default:
+    case SNDRV_PCM_FORMAT_S16_LE:
+        return PCM_FORMAT_S16_LE;
     };
 }
 
@@ -1361,7 +1373,11 @@ int pcm_get_near_param(unsigned int card, unsigned int device,
     char fn[256];
     int ret = 0;
     int min = 0, max = 0;
+    int mask = 0;
     int request_data = *data;
+    *data = 0;
+
+    if(param_is_mask(type)) return -1;
 
     pcm = calloc(1, sizeof(struct pcm));
     if (!pcm)
@@ -1380,7 +1396,7 @@ int pcm_get_near_param(unsigned int card, unsigned int device,
 
     param_init(&params);
     param_set_min(&params, type, request_data);
-    param_set_int_rmask(&params, type);
+    param_set_rmask(&params, type);
 
     if (ioctl(pcm->fd, SNDRV_PCM_IOCTL_HW_REFINE, &params)) {
         oops(pcm, errno, "cannot set hw params rate min");
@@ -1389,7 +1405,7 @@ int pcm_get_near_param(unsigned int card, unsigned int device,
 
     param_init(&params);
     param_set_max(&params, type, request_data);
-    param_set_int_rmask(&params, type);
+    param_set_rmask(&params, type);
 
     if (ioctl(pcm->fd, SNDRV_PCM_IOCTL_HW_REFINE, &params)) {
         oops(pcm, errno, "cannot set hw params rate max");
@@ -1400,6 +1416,55 @@ int pcm_get_near_param(unsigned int card, unsigned int device,
     if(min > 0)       *data = min;
     else if(max > 0)  *data = max;
     else              *data = 0;
+
+fail_close:
+    close(pcm->fd);
+    pcm->fd = -1;
+fail:
+    free(pcm);
+    return ret;
+}
+
+int pcm_check_param_mask(unsigned int card, unsigned int device,
+                     unsigned int flags, int type, int data)
+{
+    struct pcm *pcm;
+    struct snd_pcm_hw_params params;
+    char fn[256];
+    int ret = 0;
+    int min = 0, max = 0;
+    int mask = 0;
+    int request_data = data;
+
+    if (param_is_interval(type)) return 0;
+
+    pcm = calloc(1, sizeof(struct pcm));
+    if (!pcm)
+        return 0;
+
+    snprintf(fn, sizeof(fn), "/dev/snd/pcmC%uD%u%c", card, device,
+             flags & PCM_IN ? 'c' : 'p');
+
+    pcm->flags = flags;
+    pcm->fd = open(fn, O_RDWR);
+    if (pcm->fd < 0) {
+        oops(pcm, errno, "cannot open device '%s'", fn);
+        ret = 0;
+        goto fail;
+    }
+
+    param_init(&params);
+    if (type == PCM_HW_PARAM_FORMAT)
+        param_set_mask(&params, type, pcm_format_to_alsa(request_data));
+    else
+        param_set_mask(&params, type, request_data);
+    param_set_rmask(&params, type);
+
+    if (ioctl(pcm->fd, SNDRV_PCM_IOCTL_HW_REFINE, &params) == 0) {
+        oops(pcm, errno, "cannot set hw params rate min");
+        ret = 1;
+    } else
+        ret = 0;
 
 fail_close:
     close(pcm->fd);
