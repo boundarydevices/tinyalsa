@@ -92,6 +92,7 @@ struct pcm;
 enum pcm_format {
     PCM_FORMAT_S16_LE = 0,
     PCM_FORMAT_S32_LE,
+    PCM_FORMAT_S24_LE,
 
     PCM_FORMAT_MAX,
 };
@@ -193,9 +194,11 @@ int pcm_drain(struct pcm *pcm);
 int pcm_state(struct pcm *pcm);
 int pcm_prepare(struct pcm *pcm);
 int pcm_get_near_param(unsigned int card, unsigned int device,
-                     unsigned int flags, int type, int * rate);
+                     unsigned int flags, int type, int *data);
 int pcm_get_time_of_status(struct pcm *pcm);
 int pcm_get_time_of_xrun(struct pcm *pcm);
+int pcm_check_param_mask(unsigned int card, unsigned int device,
+                     unsigned int flags, int type, int data);
 /*
  * MIXER API
  */
