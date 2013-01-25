@@ -1,7 +1,7 @@
 /* pcm.c
 **
 ** Copyright 2011, The Android Open Source Project
-** Copyright (C) 2012 Freescale Semiconductor, Inc.
+** Copyright (C) 2012-2013 Freescale Semiconductor, Inc.
 **
 ** Redistribution and use in source and binary forms, with or without
 ** modification, are permitted provided that the following conditions are met:
@@ -974,7 +974,7 @@ struct pcm *pcm_open(unsigned int card, unsigned int device,
             pcm->config.start_threshold = sparams.start_threshold = 1;
         else
             pcm->config.start_threshold = sparams.start_threshold =
-                config->period_count * config->period_size / 2;
+                config->period_count * config->period_size;
     } else
         sparams.start_threshold = config->start_threshold;
 
