@@ -199,6 +199,14 @@ static unsigned int param_get_max(struct snd_pcm_hw_params *p, int n)
     return 0;
 }
 
+static void param_set_max(struct snd_pcm_hw_params *p, int n, unsigned int val)
+{
+    if (param_is_interval(n)) {
+        struct snd_interval *i = param_to_interval(p, n);
+        i->max = val;
+    }
+}
+
 static void param_set_int(struct snd_pcm_hw_params *p, int n, unsigned int val)
 {
     if (param_is_interval(n)) {
