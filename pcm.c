@@ -219,24 +219,6 @@ static unsigned int param_get_int(struct snd_pcm_hw_params *p, int n)
     return 0;
 }
 
-static unsigned int param_get_min(struct snd_pcm_hw_params *p, int n)
-{
-    if (param_is_interval(n)) {
-        struct snd_interval *i = param_to_interval(p, n);
-            return i->min;
-    }
-    return 0;
-}
-
-static unsigned int param_get_max(struct snd_pcm_hw_params *p, int n)
-{
-    if (param_is_interval(n)) {
-        struct snd_interval *i = param_to_interval(p, n);
-            return i->max;
-    }
-    return 0;
-}
-
 static void param_set_rmask(struct snd_pcm_hw_params *p, int n)
 {
     p->rmask |= 1 << n;
