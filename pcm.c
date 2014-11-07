@@ -1,7 +1,7 @@
 /* pcm.c
 **
 ** Copyright 2011, The Android Open Source Project
-** Copyright (C) 2012-2013 Freescale Semiconductor, Inc.
+** Copyright (C) 2012-2014 Freescale Semiconductor, Inc.
 **
 ** Redistribution and use in source and binary forms, with or without
 ** modification, are permitted provided that the following conditions are met:
@@ -199,13 +199,6 @@ static unsigned int param_get_max(struct snd_pcm_hw_params *p, int n)
     return 0;
 }
 
-static void param_set_max(struct snd_pcm_hw_params *p, int n, unsigned int val)
-{
-    if (param_is_interval(n)) {
-        struct snd_interval *i = param_to_interval(p, n);
-        i->max = val;
-    }
-}
 
 static void param_set_int(struct snd_pcm_hw_params *p, int n, unsigned int val)
 {
@@ -1043,6 +1036,8 @@ int pcm_prepare(struct pcm *pcm)
     if (ioctl(pcm->fd, SNDRV_PCM_IOCTL_PREPARE) < 0)
         return oops(pcm, errno, "cannot prepare channel");
 
+    pcm_sync_ptr(pcm, 0);
+
     pcm->prepared = 1;
     return 0;
 }
@@ -1364,15 +1359,6 @@ int pcm_drain(struct pcm *pcm)
     if (ioctl(pcm->fd, SNDRV_PCM_IOCTL_DRAIN) < 0)
         return oops(pcm, errno, "drain failed");
 
-    return 0;
-}
-
-int pcm_prepare(struct pcm *pcm) {
-    if (ioctl(pcm->fd, SNDRV_PCM_IOCTL_PREPARE) < 0){
-        return oops(pcm, errno, "cannot prepare channel");
-    }
-
-    pcm_sync_ptr(pcm, 0);
     return 0;
 }
 
