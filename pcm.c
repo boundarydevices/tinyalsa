@@ -1,7 +1,7 @@
 /* pcm.c
 **
 ** Copyright 2011, The Android Open Source Project
-** Copyright (C) 2012-2013 Freescale Semiconductor, Inc.
+** Copyright (C) 2012-2016 Freescale Semiconductor, Inc.
 **
 ** Redistribution and use in source and binary forms, with or without
 ** modification, are permitted provided that the following conditions are met:
@@ -874,8 +874,10 @@ struct pcm *pcm_open(unsigned int card, unsigned int device,
     char fn[256];
     int rc;
 
+    if (!config)
+        return &bad_pcm;
     pcm = calloc(1, sizeof(struct pcm));
-    if (!pcm || !config)
+    if (!pcm)
         return &bad_pcm; /* TODO: could support default config here */
 
     pcm->config = *config;
